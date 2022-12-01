@@ -18,18 +18,6 @@
 
 package org.apache.skywalking.oap.server.storage.plugin.jdbc.shardingsphere;
 
-import java.io.File;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.skywalking.oap.server.core.CoreModule;
@@ -78,11 +66,7 @@ import org.apache.skywalking.oap.server.storage.plugin.jdbc.common.dao.JDBCMetri
 import org.apache.skywalking.oap.server.storage.plugin.jdbc.common.dao.JDBCRecordDAO;
 import org.apache.skywalking.oap.server.storage.plugin.jdbc.common.dao.JDBCTagAutoCompleteQueryDAO;
 import org.apache.skywalking.oap.server.storage.plugin.jdbc.mysql.MySQLTableInstaller;
-import org.apache.skywalking.oap.server.storage.plugin.jdbc.shardingsphere.dao.ShardingAggregationQueryDAO;
-import org.apache.skywalking.oap.server.storage.plugin.jdbc.shardingsphere.dao.ShardingHistoryDeleteDAO;
-import org.apache.skywalking.oap.server.storage.plugin.jdbc.shardingsphere.dao.ShardingMetricsQueryDAO;
-import org.apache.skywalking.oap.server.storage.plugin.jdbc.shardingsphere.dao.ShardingTopologyQueryDAO;
-import org.apache.skywalking.oap.server.storage.plugin.jdbc.shardingsphere.dao.ShardingTraceQueryDAO;
+import org.apache.skywalking.oap.server.storage.plugin.jdbc.shardingsphere.dao.*;
 import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Assert;
@@ -99,6 +83,19 @@ import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 import org.powermock.reflect.Whitebox;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+
+import java.io.File;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -133,7 +130,7 @@ public class TCITShardingSphere {
     public static Collection<Object[]> versions() {
         return Arrays.asList(new Object[][] {
             {
-                "5.1.2",
+                "5.2.2-SNAPSHOT",
                 DataSourceType.MYSQL
             }
         });

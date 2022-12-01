@@ -63,7 +63,7 @@ props:
   kernel-executor-size: 16  # Infinite by default.
   proxy-frontend-flush-threshold: 128  # The default value is 128.
   proxy-hint-enabled: true
-  sql-show: false
+  sql-show: true
   check-table-metadata-enabled: false
   show-process-list-enabled: false
     # Proxy backend query fetch size. A larger value may increase the memory usage of ShardingSphere Proxy.
@@ -78,6 +78,6 @@ props:
   sql-federation-enabled: false
     # Available proxy backend driver type: JDBC (default), ExperimentalVertx
   proxy-backend-driver-type: JDBC
-  proxy-mysql-default-version: 5.7.22 # In the absence of schema name, the default version will be used.
+  proxy-mysql-default-version: 8.0.13 # In the absence of schema name, the default version will be used.
   proxy-default-port: 3307 # Proxy default port.
   proxy-netty-backlog: 1024 # Proxy netty backlog.

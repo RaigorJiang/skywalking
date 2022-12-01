@@ -18,15 +18,6 @@
 
 package org.apache.skywalking.oap.server.storage.plugin.jdbc.shardingsphere.dao;
 
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.skywalking.oap.server.core.analysis.DownSampling;
 import org.apache.skywalking.oap.server.core.storage.StorageException;
@@ -38,6 +29,17 @@ import org.apache.skywalking.oap.server.library.module.ModuleManager;
 import org.apache.skywalking.oap.server.storage.plugin.jdbc.common.dao.JDBCHistoryDeleteDAO;
 import org.apache.skywalking.oap.server.storage.plugin.jdbc.shardingsphere.ShardingRulesOperator;
 import org.joda.time.DateTime;
+
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class ShardingHistoryDeleteDAO extends JDBCHistoryDeleteDAO {
@@ -90,19 +92,27 @@ public class ShardingHistoryDeleteDAO extends JDBCHistoryDeleteDAO {
             }
             List<String> realTables = new ArrayList<>();
             try (Connection connection = client.getConnection()) {
-                ResultSet resultSet = connection.getMetaData()
-                                                .getTables(connection.getCatalog(), null, model.getName() + "_20%", null);
+//                ResultSet resultSet = connection.getMetaData()
+//                        .getTables(connection.getCatalog(), null, model.getName() + "_20%", null);
+//                while (resultSet.next()) {
+//                    realTables.add(resultSet.getString("TABLE_NAME"));
+//                }
+                ResultSet resultSet = client.executeQuery(connection, String.format("SHOW FULL TABLES FROM `%s` LIKE '%s'", connection.getCatalog(), model.getName() + "_20%"));
                 while (resultSet.next()) {
-                    realTables.add(resultSet.getString("TABLE_NAME"));
+                    realTables.add(resultSet.getString(1));
                 }
 
                 //delete additional tables
                 for (String additionalTable : model.getSqlDBModelExtension().getAdditionalTables().keySet()) {
-                    ResultSet additionalTableRS = connection.getMetaData()
-                                                            .getTables(connection.getCatalog(), null,
-                                                                       additionalTable + "_20%", null);
+//                    ResultSet additionalTableRS = connection.getMetaData()
+//                            .getTables(connection.getCatalog(), null,
+//                                    additionalTable + "_20%", null);
+//                    while (additionalTableRS.next()) {
+//                        realTables.add(additionalTableRS.getString("TABLE_NAME"));
+//                    }
+                    ResultSet additionalTableRS = client.executeQuery(connection, String.format("SHOW FULL TABLES FROM `%s` LIKE '%s'", connection.getCatalog(), additionalTable + "_20%"));
                     while (additionalTableRS.next()) {
-                        realTables.add(additionalTableRS.getString("TABLE_NAME"));
+                        realTables.add(additionalTableRS.getString(1));
                     }
                 }
             } catch (JDBCClientException | SQLException e) {
@@ -122,12 +132,14 @@ public class ShardingHistoryDeleteDAO extends JDBCHistoryDeleteDAO {
 
             try (Connection connection = client.getConnection()) {
                 Set<String> dsList = dataSources;
-                for (String prepareDeleteTable : prepareDeleteTables) {
-                    for (String ds : dsList) {
-                        client.execute(connection, getDropSQL(ds, prepareDeleteTable));
+                for (int i = 0; i < dsList.size(); i++) {
+                    for (String prepareDeleteTable : prepareDeleteTables) {
+                        client.execute(connection, "drop table if exists " + prepareDeleteTable);
                     }
+                    client.execute(connection, "refresh table metadata");
+                    TimeUnit.SECONDS.sleep(1);
                 }
-            } catch (JDBCClientException | SQLException e) {
+            } catch (JDBCClientException | SQLException | InterruptedException e) {
                 throw new IOException(e.getMessage(), e);
             }
             this.tableLatestSuccess.put(model.getName(), deadline);
@@ -139,12 +151,5 @@ public class ShardingHistoryDeleteDAO extends JDBCHistoryDeleteDAO {
 
     private long isolateTimeFromTableName(String tableName) {
         return Long.parseLong(tableName.substring(tableName.lastIndexOf("_") + 1));
-    }
-
-    private String getDropSQL(String dataSource, String table) {
-        String dropSQL = "/* ShardingSphere hint: dataSourceName=" + dataSource + "*/\n" +
-            "drop table if exists " + table;
-
-        return dropSQL;
     }
 }
